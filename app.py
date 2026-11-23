@@ -16,7 +16,11 @@ from simulation_engine import (
 )
 
 
-st.set_page_config(page_title="Alüminyum Tedarik DSS", page_icon="📊", layout="wide")
+st.set_page_config(
+    page_title="Alüminyum Tedarik DSS",
+    page_icon=":material/analytics:",
+    layout="wide",
+)
 
 
 @st.cache_data(ttl=3600, max_entries=20, show_spinner=False)
@@ -105,27 +109,30 @@ else:
 
 with st.sidebar:
     st.header("Senaryo Kontrolleri")
-    data_mode = st.selectbox(
-        "Veri modu",
-        ["Piyasa/Referans Verisi", "Özel Senaryo Girişi"],
-        help="Piyasa modunda varsayılan P₀ ve enflasyon özetleri ALI=F/yerel seri verisinden gelir; kaydırıcılarla değiştirilebilir.",
-    )
-    live_mode = data_mode == "Piyasa/Referans Verisi"
-    default_price = float(np.clip(market["price"], 500, 5000)) if live_mode else 2500.0
-    default_mu_i = float(np.clip(market["mean_return"], -0.2, 0.5)) if live_mode else 0.01
-    default_sigma_i = float(np.clip(market["volatility"], 0.0, 0.5)) if live_mode else 0.04
+    with st.form("scenario_controls"):
+        data_mode = st.selectbox(
+            "Veri modu",
+            ["Piyasa/Referans Verisi", "Özel Senaryo Girişi"],
+            key="data_mode",
+            help="Piyasa modunda varsayılan P₀ ve enflasyon özetleri ALI=F/yerel seri verisinden gelir; kaydırıcılarla değiştirilebilir.",
+        )
+        live_mode = data_mode == "Piyasa/Referans Verisi"
+        default_price = float(np.clip(market["price"], 500, 5000)) if live_mode else 2500.0
+        default_mu_i = float(np.clip(market["mean_return"], -0.2, 0.5)) if live_mode else 0.01
+        default_sigma_i = float(np.clip(market["volatility"], 0.0, 0.5)) if live_mode else 0.04
 
-    p0 = st.slider("Güncel birim fiyatı P₀ (USD/ton)", 500.0, 5000.0, default_price, 25.0)
-    mu_d = st.slider("Aylık talep ortalaması μD (ton)", 50, 10000, 500, 50)
-    sigma_d = st.slider("Talep standart sapması σD (ton)", 0, 3000, 100, 25)
-    mu_i = st.slider("Aylık enflasyon ortalaması μi", -0.20, 0.50, default_mu_i, 0.005, format="%.3f")
-    sigma_i = st.slider("Aylık enflasyon oynaklığı σi", 0.0, 0.50, default_sigma_i, 0.005, format="%.3f")
-    fixed_cost = st.slider("Sabit sipariş maliyeti K (USD)", 0, 100000, 2500, 500)
-    holding_cost = st.slider("Birim elde tutma maliyeti h (USD/ton)", 1, 1000, 50, 5)
-    mean_lead = st.slider("Ortalama teslimat süresi λL (gün)", 1, 90, 15, 1)
-    stockout_penalty = st.slider("Birim stoksuzluk cezası cs (USD/ton)", 0, 5000, 500, 50)
-    distribution = st.selectbox("Enflasyon dağılımı", ["Normal Dağılım", "Student-t Dağılımı"])
-    n_scenarios = st.slider("Simülasyon sayısı N", 1000, 50000, 10000, 1000)
+        p0 = st.slider("Güncel birim fiyatı P₀ (USD/ton)", 500.0, 5000.0, default_price, 25.0, key="base_price")
+        mu_d = st.slider("Aylık talep ortalaması μD (ton)", 50, 10000, 500, 50, key="mean_demand")
+        sigma_d = st.slider("Talep standart sapması σD (ton)", 0, 3000, 100, 25, key="demand_sigma")
+        mu_i = st.slider("Aylık enflasyon ortalaması μi", -0.20, 0.50, default_mu_i, 0.005, format="%.3f", key="mean_inflation")
+        sigma_i = st.slider("Aylık enflasyon oynaklığı σi", 0.0, 0.50, default_sigma_i, 0.005, format="%.3f", key="inflation_sigma")
+        fixed_cost = st.slider("Sabit sipariş maliyeti K (USD)", 0, 100000, 2500, 500, key="fixed_cost")
+        holding_cost = st.slider("Birim elde tutma maliyeti h (USD/ton)", 1, 1000, 50, 5, key="holding_cost")
+        mean_lead = st.slider("Ortalama teslimat süresi λL (gün)", 1, 90, 15, 1, key="mean_lead")
+        stockout_penalty = st.slider("Birim stoksuzluk cezası cs (USD/ton)", 0, 5000, 500, 50, key="stockout_penalty")
+        distribution = st.selectbox("Enflasyon dağılımı", ["Normal Dağılım", "Student-t Dağılımı"], key="inflation_distribution")
+        n_scenarios = st.slider("Simülasyon sayısı N", 1000, 50000, 10000, 1000, key="scenario_count")
+        st.form_submit_button("Analizi çalıştır", icon=":material/play_arrow:", width="stretch")
 
 quantities = np.arange(50.0, 2000.0 + 25.0, 25.0)
 scenarios = cached_scenarios(

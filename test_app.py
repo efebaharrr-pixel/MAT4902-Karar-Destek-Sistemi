@@ -13,3 +13,12 @@ def test_app_has_expected_controls():
     assert not app.exception
     assert app.selectbox
     assert app.slider
+
+
+def test_app_runs_after_form_submission():
+    app = AppTest.from_file("app.py", default_timeout=30).run()
+    app.slider("mean_demand").set_value(600).run()
+    app.button[0].click().run()
+
+    assert not app.exception
+    assert app.metric

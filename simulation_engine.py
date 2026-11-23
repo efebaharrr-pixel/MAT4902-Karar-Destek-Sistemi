@@ -33,8 +33,10 @@ def generate_scenarios(
     seed: int = DEFAULT_SEED,
 ) -> dict[str, np.ndarray]:
     """CRN için tüm karar adaylarında tekrar kullanılacak senaryoları üretir."""
-    if n_scenarios < 1:
-        raise ValueError("Senaryo sayısı en az 1 olmalıdır.")
+    if not isinstance(n_scenarios, (int, np.integer)) or n_scenarios < 1:
+        raise ValueError("Senaryo sayısı en az 1 tam sayı olmalıdır.")
+    if not all(np.isfinite(value) for value in (mu_demand, sigma_demand, sigma_inflation, mean_lead_days)):
+        raise ValueError("Talep, oynaklık ve teslimat parametreleri sonlu sayılar olmalıdır.")
     if mu_demand < 0 or sigma_demand < 0 or sigma_inflation < 0 or mean_lead_days <= 0:
         raise ValueError("Talep, oynaklık ve teslimat parametreleri geçersiz.")
 
@@ -91,6 +93,8 @@ def evaluate_order_quantities(
         raise ValueError("Talep senaryoları negatif veya sonsuz olamaz.")
     if np.any(~np.isfinite(lead_days)) or np.any(lead_days < 0):
         raise ValueError("Teslimat senaryoları negatif veya sonsuz olamaz.")
+    if np.any(~np.isfinite(inflation_shock)):
+        raise ValueError("Enflasyon senaryoları sonsuz veya tanımsız olamaz.")
 
     demand = demand[:, None]
     lead_days = lead_days[:, None]
@@ -179,10 +183,29 @@ def delivery_sensitivity(
     """Ortak uniform örnekleriyle Poisson teslimat gecikmesi maliyet eğrilerini verir."""
     quantities = np.asarray(quantities, dtype=float).reshape(-1)
     mean_lead_days = np.asarray(mean_lead_days, dtype=float).reshape(-1)
-    if np.any(mean_lead_days <= 0):
-        raise ValueError("Ortalama teslimat süreleri pozitif olmalıdır.")
+    if quantities.size == 0 or np.any(~np.isfinite(quantities)) or np.any(quantities <= 0):
+        raise ValueError("Sipariş miktarları pozitif ve sonlu olmalıdır.")
+    if mean_lead_days.size == 0 or np.any(~np.isfinite(mean_lead_days)) or np.any(mean_lead_days <= 0):
+        raise ValueError("Ortalama teslimat süreleri pozitif ve sonlu olmalıdır.")
+    if not all(np.isfinite(value) for value in (base_price, mean_inflation, sigma_inflation, holding_cost, fixed_order_cost, stockout_penalty)):
+        raise ValueError("Maliyet ve enflasyon parametreleri sonlu sayılar olmalıdır.")
+    if base_price <= 0 or sigma_inflation < 0 or holding_cost <= 0 or fixed_order_cost < 0 or stockout_penalty < 0:
+        raise ValueError("Maliyet ve oynaklık parametreleri geçersiz.")
 
-    demand = scenarios["demand"]
+    required_keys = ("demand", "lead_uniform", "inflation_shock")
+    if any(key not in scenarios for key in required_keys):
+        raise ValueError("Stres senaryolarında talep, ortak uniform veya enflasyon alanı eksik.")
+    demand = np.asarray(scenarios["demand"], dtype=float).reshape(-1)
+    lead_uniform = np.asarray(scenarios["lead_uniform"], dtype=float).reshape(-1)
+    inflation_shock = np.asarray(scenarios["inflation_shock"], dtype=float).reshape(-1)
+    if demand.size == 0 or demand.size != lead_uniform.size or demand.size != inflation_shock.size:
+        raise ValueError("Stres senaryo dizilerinin uzunlukları eşleşmelidir.")
+    if np.any(~np.isfinite(demand)) or np.any(demand < 0):
+        raise ValueError("Talep senaryoları negatif veya sonsuz olamaz.")
+    if np.any(~np.isfinite(lead_uniform)) or np.any((lead_uniform < 0) | (lead_uniform > 1)):
+        raise ValueError("Ortak uniform senaryoları [0, 1] aralığında olmalıdır.")
+    if np.any(~np.isfinite(inflation_shock)):
+        raise ValueError("Enflasyon senaryoları sonsuz veya tanımsız olamaz.")
     q = quantities[None, :]
     inflation = np.maximum(-0.95, mean_inflation + sigma_inflation * scenarios["inflation_shock"])
     purchase_cost = float(np.mean(base_price * (1.0 + inflation) * demand))

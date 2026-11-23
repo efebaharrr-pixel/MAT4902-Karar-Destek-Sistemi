@@ -35,7 +35,7 @@ Bağlanan cihazlar `http://BILGISAYAR-IP-ADRESI:8502` adresini açar. Bu yöntem
 
 ## Nihai Modül Yapısı
 
-- `app.py`: Türkçe etkileşimli arayüz, yönetici KPI'ları, risk grafikleri, stres analizi ve rapor indirme.
+- `app.py`: Türkçe etkileşimli arayüz, form tabanlı senaryo kontrolleri, yönetici KPI'ları, risk grafikleri, stres analizi ve rapor indirme.
 - `simulation_engine.py`: Senaryo üretimi, Common Random Numbers, maliyet matrisi, EOQ karşılaştırması, VaR/CVaR.
 - `data_loader.py`: ALI=F veri yükleme ve açık biçimde etiketlenmiş yerel fallback seri.
 - `test_project.py`: Hesap motoru tekrar üretilebilirlik ve veri kaynağı testleri.
@@ -78,4 +78,14 @@ Yahoo Finance ALI=F verisi edinilebildiğinde aylık kapanış serisi kullanıl�
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Beklenen sonuç: 7 hesap motoru ve Streamlit testinin geçmesi.
+Beklenen sonuç: Hesap motoru ve Streamlit testlerinin tamamının geçmesi.
+
+## Son Kullanıcı Akışı
+
+1. Sol panelde veri modunu ve model parametrelerini seçin.
+2. `Analizi çalıştır` düğmesine basarak Monte Carlo hesaplarını tetikleyin.
+3. Yönetici KPI'larını ve risk grafiğini inceleyin.
+4. Stres testi bölümündeki teslimat gecikmesi eğrilerini karşılaştırın.
+5. CSV veya TXT biçiminde özet rapor indirin.
+
+İçerik tekrar üretilebilir olacak şekilde sabit seed (`42`) ve Common Random Numbers yaklaşımı kullanır.

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from data_loader import _fallback_data
-from simulation_engine import generate_scenarios, optimize_order_quantity
+from simulation_engine import delivery_sensitivity, generate_scenarios, optimize_order_quantity
 
 
 def test_scenarios_are_reproducible_and_valid():
@@ -81,3 +82,31 @@ def test_invalid_cost_parameters_are_rejected():
         return
 
     raise AssertionError("Negatif birim fiyat kabul edilmemelidir.")
+
+
+def test_scenario_rejects_nan_or_non_integer_count():
+    with pytest.raises(ValueError):
+        generate_scenarios(100.5, 500, 100, 0.04, 15)
+
+    with pytest.raises(ValueError):
+        generate_scenarios(100, np.nan, 100, 0.04, 15)
+
+
+def test_delivery_sensitivity_returns_one_cost_row_per_lead_time():
+    scenarios = generate_scenarios(300, 500, 100, 0.04, 15, seed=42)
+    quantities = np.arange(50.0, 525.0, 25.0)
+
+    costs = delivery_sensitivity(
+        quantities,
+        scenarios,
+        base_price=2500,
+        mean_lead_days=np.array([15.0, 30.0, 45.0]),
+        mean_inflation=0.01,
+        sigma_inflation=0.04,
+        holding_cost=50,
+        fixed_order_cost=2500,
+        stockout_penalty=500,
+    )
+
+    assert costs.shape == (3, quantities.size)
+    assert np.all(np.isfinite(costs))
