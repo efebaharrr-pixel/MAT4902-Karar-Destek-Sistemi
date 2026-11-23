@@ -72,16 +72,31 @@ def evaluate_order_quantities(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Senaryo x sipariş miktarı maliyet matrisini broadcasting ile hesaplar."""
     quantities = np.asarray(quantities, dtype=float).reshape(-1)
-    if quantities.size == 0 or np.any(quantities <= 0):
-        raise ValueError("Sipariş miktarları pozitif olmalıdır.")
-    if base_price <= 0 or holding_cost <= 0 or fixed_order_cost < 0 or stockout_penalty < 0:
-        raise ValueError("Maliyet parametreleri geçersiz.")
+    if quantities.size == 0 or np.any(~np.isfinite(quantities)) or np.any(quantities <= 0):
+        raise ValueError("Sipariş miktarları pozitif ve sonlu olmalıdır.")
+    if not all(np.isfinite(value) for value in (base_price, mean_inflation, sigma_inflation, holding_cost, fixed_order_cost, stockout_penalty)):
+        raise ValueError("Maliyet ve enflasyon parametreleri sonlu sayılar olmalıdır.")
+    if base_price <= 0 or holding_cost <= 0 or fixed_order_cost < 0 or stockout_penalty < 0 or sigma_inflation < 0:
+        raise ValueError("Maliyet ve oynaklık parametreleri geçersiz.")
 
-    demand = scenarios["demand"][:, None]
-    lead_days = scenarios["lead_days"][:, None]
+    required_keys = ("demand", "lead_days", "inflation_shock")
+    if any(key not in scenarios for key in required_keys):
+        raise ValueError("Senaryo verisinde talep, enflasyon veya teslimat alanı eksik.")
+    demand = np.asarray(scenarios["demand"], dtype=float).reshape(-1)
+    lead_days = np.asarray(scenarios["lead_days"], dtype=float).reshape(-1)
+    inflation_shock = np.asarray(scenarios["inflation_shock"], dtype=float).reshape(-1)
+    if demand.size == 0 or demand.size != lead_days.size or demand.size != inflation_shock.size:
+        raise ValueError("Senaryo dizilerinin uzunlukları ve boyutları eşleşmelidir.")
+    if np.any(~np.isfinite(demand)) or np.any(demand < 0):
+        raise ValueError("Talep senaryoları negatif veya sonsuz olamaz.")
+    if np.any(~np.isfinite(lead_days)) or np.any(lead_days < 0):
+        raise ValueError("Teslimat senaryoları negatif veya sonsuz olamaz.")
+
+    demand = demand[:, None]
+    lead_days = lead_days[:, None]
     inflation = np.maximum(
         -0.95,
-        mean_inflation + sigma_inflation * scenarios["inflation_shock"],
+        mean_inflation + sigma_inflation * inflation_shock,
     )[:, None]
     q = quantities[None, :]
 

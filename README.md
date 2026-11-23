@@ -1,14 +1,19 @@
 # Alüminyum Tedarik Stokastik Karar Destek Sistemi
 
-MAT 4902 bitirme projesi için geliştirilmiş nihai Streamlit karar destek uygulaması. Uygulama, talep, fiyat/enflasyon ve teslimat süresi belirsizliklerini aynı Monte Carlo senaryolarında değerlendirerek beklenen maliyeti minimize eden sipariş miktarını, VaR/CVaR risklerini ve teslimat gecikmesi hassasiyetini sunar.
+MAT 4902 bitirme projesi için geliştirilmiş Türkçe Streamlit karar destek uygulaması. Uygulama, talep, enflasyon ve teslimat süresi belirsizliklerini tek ortak Monte Carlo senaryosunda değerlendirir; beklenen maliyeti minimize eden sipariş miktarı, VaR/CVaR riski, EOQ karşılaştırması ve teslimat gecikmesi stres analizi sunar.
 
-## Çalıştırma
+## Hızlı Başlangıç
+
+Windows PowerShell terminalinde proje klasöründe çalıştırın:
 
 ```powershell
-.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1 --server.port 8501
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1 --server.port 8502 --server.runOnSave true
 ```
 
-Uygulama: `http://127.0.0.1:8501`
+Tarayıcı adresi: `http://127.0.0.1:8502`
+
+VS Code içinde ayrıca `Run and Debug` panelinden **Streamlit: app.py** profili kullanılabilir.
 
 ## Başkalarıyla Paylaşma
 
@@ -23,10 +28,10 @@ Bu Streamlit uygulamasını herkese açık bir web adresiyle paylaşmanın en uy
 Aynı ağdaki kullanıcılarla paylaşmak için bilgisayarda sunucuyu ağdaki tüm arayüzlere açın:
 
 ```powershell
-.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 0.0.0.0 --server.port 8502
 ```
 
-Bağlanan cihazlar `http://BILGISAYAR-IP-ADRESI:8501` adresini açar. Bu yöntem sadece açık port 8501'e ağdan erişime izin veren ve bilgisayar açık olan paylaşım için uygundur.
+Bağlanan cihazlar `http://BILGISAYAR-IP-ADRESI:8502` adresini açar. Bu yöntem sadece açık port 8502'e ağdan erişime izin veren ve bilgisayar açık olan paylaşım içindir.
 
 ## Nihai Modül Yapısı
 
@@ -73,4 +78,4 @@ Yahoo Finance ALI=F verisi edinilebildiğinde aylık kapanış serisi kullanıl�
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Beklenen sonuç: tüm hesap motoru ve Streamlit başlangıç testlerinin geçmesi.
+Beklenen sonuç: 7 hesap motoru ve Streamlit testinin geçmesi.
